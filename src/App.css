@@ -1,6 +1,6 @@
 /* ─── Tier themes ─────────────────────────────────────────────────── */
 
-/* 0–99: Zen (warm stone) */
+/* 0–9: Zen (warm stone) */
 .tier-zen {
   --bg:           #f2efe6;
   --bg-card:      #e8e3d4;
@@ -22,6 +22,30 @@
   --next-color:   #9a9780;
   --next-border:  #cdc9b4;
   --feedback-color: #9a9780;
+}
+
+/* 10+: Stone (cool gray) */
+.tier-stone {
+  --bg:           #f0eeeb;
+  --bg-card:      #dedad4;
+  --text:         #2e2c28;
+  --text-muted:   #7a7670;
+  --text-faint:   #a8a49c;
+  --border:       #c0bbb2;
+  --btn-idle-bg:  #dedad4;
+  --btn-idle-fg:  #2e2c28;
+  --streak-color: #6e7a8a;
+  --best-color:   #4a5260;
+  --correct-bg:   #bdd4b8;
+  --correct-fg:   #1a2e18;
+  --correct-bd:   #92b88c;
+  --wrong-bg:     #e0b0a8;
+  --wrong-fg:     #3a1a16;
+  --wrong-bd:     #c08880;
+  --glyph-glow:   #6e7a8a40;
+  --next-color:   #7a7670;
+  --next-border:  #c0bbb2;
+  --feedback-color: #7a7670;
 }
 
 /* 100+: Pale gold / amber */
