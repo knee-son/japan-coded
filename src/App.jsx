@@ -25,7 +25,7 @@ const HIRAGANA = [
 
 const TIERS = [
   { min: 0,    cls: "tier-zen",       label: null },
-  { min: 10,    cls: "tier-stone",       label: "🪨 basics unlocked" },
+  { min: 10,    cls: "tier-stone",    label: "🪨 basics unlocked" },
   { min: 100,  cls: "tier-gold",      label: "🌾 pale gold unlocked" },
   { min: 250,  cls: "tier-green",     label: "🌿 verdant unlocked" },
   { min: 500,  cls: "tier-diamond",   label: "💎 diamond unlocked" },
