@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
+import Confetti from './Confetti.jsx'
 
 const HIRAGANA = [
   { glyph: "あ", romaji: "a" }, { glyph: "い", romaji: "i" }, { glyph: "う", romaji: "u" },
@@ -76,6 +77,7 @@ export default function HiraganaTrainer() {
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [unlockMsg, setUnlockMsg] = useState(null);
+  const [confettiKey, setConfettiKey] = useState(0); // increment to re-trigger
   const unlockTimer = useRef(null);
 
   const tierClass = getTierClass(streak);
@@ -96,6 +98,13 @@ export default function HiraganaTrainer() {
       setStreak(s => {
         const next = s + 1;
         setBestStreak(b => Math.max(b, next));
+        const label = getTierLabel(s, next);
+        if (label) {
+          setUnlockMsg(label);
+          setConfettiKey(k => k + 1);
+          clearTimeout(unlockTimer.current);
+          unlockTimer.current = setTimeout(() => setUnlockMsg(null), 3000);
+        }
         return next;
       });
     } else {
@@ -124,6 +133,7 @@ export default function HiraganaTrainer() {
 
   return (
     <div className={`app-root ${tierClass}`}>
+      <Confetti active={confettiKey > 0} key={confettiKey} />
       {/* Tier unlock toast */}
       <div className={`tier-unlock ${unlockMsg ? "show" : ""}`}>
         {unlockMsg}
