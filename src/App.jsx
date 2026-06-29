@@ -30,10 +30,10 @@ const TIERS = [
   { min: 1000, cls: "tier-blackbelt", label: "🥋 black belt unlocked" },
 ];
 
-function getTierClass(score) {
+function getTierClass(streak) {
   let cls = TIERS[0].cls;
   for (const t of TIERS) {
-    if (score >= t.min) cls = t.cls;
+    if (streak >= t.min) cls = t.cls;
   }
   return cls;
 }
@@ -75,11 +75,10 @@ export default function HiraganaTrainer() {
   const [selected, setSelected] = useState(null);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
-  const [score, setScore] = useState(0);
   const [unlockMsg, setUnlockMsg] = useState(null);
   const unlockTimer = useRef(null);
 
-  const tierClass = getTierClass(score);
+  const tierClass = getTierClass(streak);
 
   const advance = useCallback((nextWeights) => {
     setSelected(null);
@@ -99,20 +98,9 @@ export default function HiraganaTrainer() {
         setBestStreak(b => Math.max(b, next));
         return next;
       });
-      setScore(prev => {
-        const next = prev + 10;
-        const label = getTierLabel(prev, next);
-        if (label) {
-          clearTimeout(unlockTimer.current);
-          setUnlockMsg(label);
-          unlockTimer.current = setTimeout(() => setUnlockMsg(null), 2200);
-        }
-        return next;
-      });
     } else {
       nextWeights[correct.romaji] = (nextWeights[correct.romaji] ?? 0) + 1;
       setStreak(0);
-      setScore(prev => Math.max(0, prev - 2));
     }
     setWeights(nextWeights);
   }, [selected, correct, weights]);
@@ -145,7 +133,6 @@ export default function HiraganaTrainer() {
       <div className="app-stats">
         <span>STREAK <span className="stat-streak">{streak}</span></span>
         <span>BEST <span className="stat-best">{bestStreak}</span></span>
-        <span>SCORE <span className="stat-streak">{score}</span></span>
       </div>
 
       {/* Glyph */}
