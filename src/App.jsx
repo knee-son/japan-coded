@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import "./App.css";
 
 const HIRAGANA = [
   { glyph: "あ", romaji: "a" }, { glyph: "い", romaji: "i" }, { glyph: "う", romaji: "u" },
@@ -21,6 +22,29 @@ const HIRAGANA = [
   { glyph: "わ", romaji: "wa" }, { glyph: "を", romaji: "wo" }, { glyph: "ん", romaji: "n" },
 ];
 
+const TIERS = [
+  { min: 0,    cls: "tier-zen",       label: null },
+  { min: 100,  cls: "tier-gold",      label: "🌾 pale gold unlocked" },
+  { min: 250,  cls: "tier-green",     label: "🌿 verdant unlocked" },
+  { min: 500,  cls: "tier-diamond",   label: "💎 diamond unlocked" },
+  { min: 1000, cls: "tier-blackbelt", label: "🥋 black belt unlocked" },
+];
+
+function getTierClass(score) {
+  let cls = TIERS[0].cls;
+  for (const t of TIERS) {
+    if (score >= t.min) cls = t.cls;
+  }
+  return cls;
+}
+
+function getTierLabel(prev, next) {
+  for (const t of TIERS) {
+    if (prev < t.min && next >= t.min) return t.label;
+  }
+  return null;
+}
+
 function shuffle(arr) {
   return [...arr].sort(() => Math.random() - 0.5);
 }
@@ -30,7 +54,6 @@ function getChoices(correct, all) {
   return shuffle([correct, ...others]);
 }
 
-// weight = 1 + consecutive mistakes for that character
 function weightedRandom(all, weights) {
   const total = all.reduce((sum, h) => sum + 1 + (weights[h.romaji] ?? 0), 0);
   let r = Math.random() * total;
@@ -52,6 +75,11 @@ export default function HiraganaTrainer() {
   const [selected, setSelected] = useState(null);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  const [score, setScore] = useState(0);
+  const [unlockMsg, setUnlockMsg] = useState(null);
+  const unlockTimer = useRef(null);
+
+  const tierClass = getTierClass(score);
 
   const advance = useCallback((nextWeights) => {
     setSelected(null);
@@ -71,9 +99,20 @@ export default function HiraganaTrainer() {
         setBestStreak(b => Math.max(b, next));
         return next;
       });
+      setScore(prev => {
+        const next = prev + 10;
+        const label = getTierLabel(prev, next);
+        if (label) {
+          clearTimeout(unlockTimer.current);
+          setUnlockMsg(label);
+          unlockTimer.current = setTimeout(() => setUnlockMsg(null), 2200);
+        }
+        return next;
+      });
     } else {
       nextWeights[correct.romaji] = (nextWeights[correct.romaji] ?? 0) + 1;
       setStreak(0);
+      setScore(prev => Math.max(0, prev - 2));
     }
     setWeights(nextWeights);
   }, [selected, correct, weights]);
@@ -86,91 +125,51 @@ export default function HiraganaTrainer() {
     return () => window.removeEventListener("keydown", handler);
   }, [selected, advance, weights]);
 
-  const getButtonStyle = (choice) => {
-    const base = {
-      padding: "14px 10px",
-      borderRadius: "12px",
-      fontSize: "1.1rem",
-      fontWeight: "600",
-      cursor: selected ? "default" : "pointer",
-      border: "2px solid transparent",
-      transition: "all 0.2s",
-      letterSpacing: "0.05em",
-    };
+  useEffect(() => () => clearTimeout(unlockTimer.current), []);
 
-    if (!selected) {
-      return { ...base, background: "#e8e3d4", color: "#3b3a2f", border: "2px solid #cdc9b4" };
-    }
-
-    if (choice.romaji === correct.romaji) {
-      return { ...base, background: "#c2d9a0", color: "#2a3d1a", border: "2px solid #a8c478" };
-    }
-    if (choice.romaji === selected.romaji) {
-      return { ...base, background: "#e8a89a", color: "#3d1a1a", border: "2px solid #d4806e" };
-    }
-    return { ...base, background: "#e8e3d4", color: "#b8b49a", border: "2px solid #cdc9b4" };
+  const getChoiceClass = (choice) => {
+    if (!selected) return "choice-btn";
+    if (choice.romaji === correct.romaji) return "choice-btn correct";
+    if (choice.romaji === selected.romaji) return "choice-btn wrong";
+    return "choice-btn dimmed";
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#f2efe6",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-      color: "#3b3a2f",
-      padding: "24px",
-    }}>
-      {/* Streak */}
-      <div style={{ display: "flex", gap: "32px", marginBottom: "48px", color: "#9a9780", fontSize: "0.85rem", letterSpacing: "0.1em" }}>
-        <span>STREAK <span style={{ color: streak > 0 ? "#5a8a5a" : "#b8b49a", fontWeight: "700" }}>{streak}</span></span>
-        <span>BEST <span style={{ color: "#b07d3a", fontWeight: "700" }}>{bestStreak}</span></span>
+    <div className={`app-root ${tierClass}`}>
+      {/* Tier unlock toast */}
+      <div className={`tier-unlock ${unlockMsg ? "show" : ""}`}>
+        {unlockMsg}
+      </div>
+
+      {/* Stats */}
+      <div className="app-stats">
+        <span>STREAK <span className="stat-streak">{streak}</span></span>
+        <span>BEST <span className="stat-best">{bestStreak}</span></span>
+        <span>SCORE <span className="stat-streak">{score}</span></span>
       </div>
 
       {/* Glyph */}
-      <div style={{
-        fontSize: "9rem",
-        lineHeight: 1,
-        marginBottom: "56px",
-        userSelect: "none",
-        filter: selected ? "none" : "drop-shadow(0 0 18px #5a8a5a40)",
-        transition: "filter 0.3s",
-      }}>
+      <div className={`app-glyph ${selected ? "" : "unanswered"}`}>
         {correct.glyph}
       </div>
 
       {/* Choices */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "12px",
-        width: "100%",
-        maxWidth: "320px",
-      }}>
+      <div className="app-choices">
         {choices.map((choice) => (
           <button
             key={choice.romaji}
             onClick={() => handleChoice(choice)}
-            style={getButtonStyle(choice)}
+            disabled={!!selected}
+            className={getChoiceClass(choice)}
           >
             {choice.romaji}
           </button>
         ))}
       </div>
 
-      {/* Feedback + Next inline */}
-      <div style={{
-        marginTop: "28px",
-        height: "40px",
-        display: "flex",
-        alignItems: "center",
-        gap: "16px",
-        opacity: selected ? 1 : 0,
-        transition: "opacity 0.2s",
-      }}>
-        <span style={{ fontSize: "0.85rem", color: "#9a9780", letterSpacing: "0.06em" }}>
+      {/* Feedback + Next */}
+      <div className={`app-feedback ${selected ? "visible" : ""}`}>
+        <span className="feedback-text">
           {selected
             ? selected.isCorrect
               ? "✓ correct"
@@ -178,19 +177,7 @@ export default function HiraganaTrainer() {
             : ""}
         </span>
         {selected && (
-          <button
-            onClick={() => advance(weights)}
-            style={{
-              padding: "6px 18px",
-              background: "transparent",
-              border: "1px solid #cdc9b4",
-              borderRadius: "8px",
-              color: "#9a9780",
-              cursor: "pointer",
-              fontSize: "0.85rem",
-              letterSpacing: "0.05em",
-            }}
-          >
+          <button className="next-btn" onClick={() => advance(weights)}>
             next →
           </button>
         )}
